@@ -12,20 +12,19 @@ function doStuff_temp(Models,criterion,Batch,coef)
 	State2=Model2:forward(im2)
 
 	criterion=criterion:cuda()
-	loss=criterion:forward({State1,State2})
-	GradOutputs=criterion:backward({State1,State2})
+	loss=criterion:forward({State2,State1})
+	GradOutputs=criterion:backward({State2,State1})
 
 	-- calculer les gradients pour les deux images
-	Model:backward(im1,coef*GradOutputs[1])
-	Model2:backward(im2,coef*GradOutputs[2])
-
+	Model:backward(im1,coef*GradOutputs[2])
+	Model2:backward(im2,coef*GradOutputs[1])
 	return loss, coef*GradOutputs[1]
 end
 
 function doStuff_Caus(Models,criterion,Batch,coef)
 	
 	local coef= coef or 1
-
+print(Batch[1]:size(1))
 	im1=Batch[1]:cuda()
 	im2=Batch[2]:cuda()
 	
@@ -34,11 +33,15 @@ function doStuff_Caus(Models,criterion,Batch,coef)
 
 	State1=Model:forward(im1)
 	State2=Model2:forward(im2)
+print(State1)
+print(State2)
 
 
 	criterion=criterion:cuda()
 	output=criterion:updateOutput({State1, State2})
+print(output)
 
+print(nil..nil)
 	--we backward with a starting gradient initialized at 1
 	GradOutputs=criterion:updateGradInput({State1, State2}, torch.ones(1))
 

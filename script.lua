@@ -14,9 +14,9 @@ require 'printing.lua'
 require "Get_Images_Set"
 require 'priors'
 
-function Rico_Training(Models,Mode,Data1,Data2,criterion,coef,LR)
+function Rico_Training(Models,Mode,Data1,Data2,criterion,coef,LR,BatchSize)
 	local LR=LR or 0.001
-	local mom=0.0--9
+	local mom=0.9
 	local coefL2=0,0
 
 	local batch=getRandomBatchFromSeparateList(Data1,Data2,BatchSize,Mode)
@@ -41,12 +41,12 @@ function Rico_Training(Models,Mode,Data1,Data2,criterion,coef,LR)
 		else print("Wrong Mode")
 		end
          	return loss,gradParameters
-	end:
---        sgdState = sgdState or { learningRate = LR, momentum = mom,learningRateDecay = 5e-7,weightDecay=coefL2 }
---	parameters, loss=optim.sgd(feval, parameters, sgdState)
+	end
+        sgdState = sgdState or { learningRate = LR, momentum = mom,learningRateDecay = 5e-7,weightDecay=coefL2 }
+	parameters, loss=optim.sgd(feval, parameters, sgdState)
 
-optimState={learningRate=LR}
-parameters, loss=optim.adagrad(feval, parameters, optimState)
+--optimState={learningRate=LR}
+--parameters, loss=optim.adagrad(feval, parameters, optimState)
 
 	 -- loss[1] table of one value transformed in just a value
 	 -- grad[1] we use just the first gradient to print the figure (there are 2 or 4 gradient normally)
@@ -56,9 +56,9 @@ end
 
 
 function train_Epoch(Models,Prior_Used,Log_Folder,LR)
-	local BatchSize=2
 	local nbEpoch=100
-	local NbBatch=10
+	local NbBatch=100
+	local BatchSize=2
 	
 	local name='Save'..day
 	local name_save=Log_Folder..name..'.t7'
@@ -83,7 +83,7 @@ print(Temp)
 print(Rep)
 print(Caus)
 
-	local coef_Temp=0.01
+	local coef_Temp=1
 	local coef_Prop=1
 	local coef_Rep=1
 	local coef_Caus=1
@@ -137,29 +137,26 @@ print(Caus)
 		Data1,ThereIsReward=load_Part_list(list1,txt1,txt_reward1,image_width,image_height,nb_part,part1,false)--without data augmentation
 		Data2,ThereIsReward2=load_Part_list(list2,txt2,txt_reward2,image_width,image_height,nb_part,part2,false)--without data augmentation
 
-		--imgs1=imgs[indice1]
-		--lossimgs2=imgs[indice2]
------
-
+	printParamInAFile(Log_Folder,coef_list, LR, "LR+mom", BatchSize, nbEpoch, NbBatch, model_file)
 
 		for numBatch=1, NbBatch do
 			if Temp then
-				Loss,Grad=Rico_Training(Models,'Temp',Data1,Data2, TEMP_criterion, coef_Temp,LR)
+				Loss,Grad=Rico_Training(Models,'Temp',Data1,Data2,TEMP_criterion, coef_Temp,LR,BatchSize)
 				Grad_Temp=Grad_Temp+Grad
  				Temp_loss=Temp_loss+Loss
 			end
 			if Prop then
-				Loss,Grad=Rico_Training(Models,'Prop',Data1,Data2, PROP_criterion, coef_Prop,LR)
+				Loss,Grad=Rico_Training(Models,'Prop',Data1,Data2, PROP_criterion, coef_Prop,LR,BatchSize)
 				Grad_Prop=Grad_Prop+Grad
 				Prop_loss=Prop_loss+Loss
 			end
 			if Rep then
-				Loss,Grad=Rico_Training(Models,'Rep',Data1,Data2,REP_criterion, coef_Rep,LR)
+				Loss,Grad=Rico_Training(Models,'Rep',Data1,Data2,REP_criterion, coef_Rep,LR,BatchSize)
 				Grad_Rep=Grad_Rep+Grad
 				Rep_loss=Rep_loss+Loss
 			end
 			if Caus and (ThereIsReward and ThereIsReward2) then 
-				Loss,Grad=Rico_Training(Models, 'Caus',Data1,Data2, CAUS_criterion, coef_Caus,LR)
+				Loss,Grad=Rico_Training(Models, 'Caus',Data1,Data2, CAUS_criterion, coef_Caus,LR,BatchSize)
 				Grad_Caus=Grad_Caus+Grad
 				Caus_loss=Caus_loss+Loss
 			end
@@ -170,23 +167,23 @@ print(Caus)
 		local id=name..epoch -- variable used to not mix several log files
 		Temp_test,Prop_test,Rep_test,Caus_test, list_estimation=Print_performance(Models, imgs_test,txt_test,txt_reward_test,id.."_Test",Log_Folder,truth)
 
-		table.insert(Temp_loss_list,Temp_loss/(NbBatch*BatchSize))
-		table.insert(Prop_loss_list,Prop_loss/(NbBatch*BatchSize))
-		table.insert(Rep_loss_list,Rep_loss/(NbBatch*BatchSize))		
-		table.insert(Caus_loss_list,Caus_loss/(NbBatch*BatchSize))
+		table.insert(Temp_loss_list,Temp_loss/NbBatch)
+		table.insert(Prop_loss_list,Prop_loss/NbBatch)
+		table.insert(Rep_loss_list,Rep_loss/NbBatch)		
+		table.insert(Caus_loss_list,Caus_loss/NbBatch)
 
 		table.insert(Temp_loss_list_test,Temp_test)
 		table.insert(Prop_loss_list_test,Prop_test)
 		table.insert(Rep_loss_list_test,Rep_test)
 		table.insert(Caus_loss_list_test,Caus_test)
 
-		table.insert(Temp_grad_list,Grad_Temp/NbBatch)
+		table.insert(Temp_grad_list,Grad_Temp)
 		table.insert(Prop_grad_list,Grad_Prop/NbBatch)
 		table.insert(Rep_grad_list,Grad_Rep/NbBatch)
 		table.insert(Caus_grad_list,Grad_Caus/NbBatch)
 
 		
-		sum_train=(Temp_loss+Prop_loss+Rep_loss+Caus_loss)/(NbBatch*BatchSize)
+		sum_train=(Temp_loss+Prop_loss+Rep_loss+Caus_loss)/NbBatch
 		table.insert(Sum_loss_train,sum_train)
 		table.insert(Sum_loss_test,Temp_test+Prop_test+Rep_test+Caus_test)
 
@@ -201,7 +198,7 @@ print(Caus)
 end
 
 
-day="21-09-2"
+day="23-09"
 local UseSecondGPU= false
 local LR=0.001
 local Dimension=3
@@ -216,7 +213,7 @@ name_load='./Log/Save/'..day..'.t7'
 list_folders_images, list_txt_action,list_txt_button, list_txt_state=Get_HeadCamera_View_Files()
 local reload=false
 local TakeWeightFromAE=false
-local model_file='./models/topUniqueFM_Deeper2'
+model_file='./models/topUniqueFM_Deeper2'
 
 
 image_width=200

@@ -108,7 +108,7 @@ function dataAugmentation(im, lenght, width)
 	return im+noise
 end
 
-function printParamInAFile(path,coef_list, LR, optim, BatchSize, nbEpoch, NbBatch)
+function printParamInAFile(path,coef_list, LR, optim, BatchSize, nbEpoch, NbBatch, model)
 	file=path.."info.txt"
 	f=io.open(file, "w")
 	f:write("Coef Temp    : "..coef_list[1].."\n")
@@ -121,6 +121,7 @@ function printParamInAFile(path,coef_list, LR, optim, BatchSize, nbEpoch, NbBatc
 	f:write("BatchSize    : "..BatchSize.."\n")
 	f:write("Nb Epoch     : "..nbEpoch.."\n")
 	f:write("Nb Batch     : "..NbBatch.."\n")
+	f:write("Model name   : "..model.."\n")
 	f:close()
 end
 
@@ -237,10 +238,11 @@ end
 ---------------------------------------------------------------------------------------
 function getRandomBatchFromSeparateList(Data1,Data2, lenght, Mode)
 
+	local Dim=Data1.images[1]:size()
 	if Mode=="Prop" or Mode=="Rep" then
-		Batch=torch.Tensor(4, lenght,3, Data1.images[1]:size(2), Data1.images[1]:size(3))
+		Batch=torch.Tensor(4, lenght,Dim[1], Dim[2], Dim[3])
 	else
-		Batch=torch.Tensor(2, lenght,3, Data1.images[1]:size(2), Data1.images[1]:size(3))
+		Batch=torch.Tensor(2, lenght,Dim[1], Dim[2], Dim[3])
 	end
 
 	for i=1, lenght do
