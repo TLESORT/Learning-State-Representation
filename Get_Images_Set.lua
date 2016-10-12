@@ -137,17 +137,18 @@ function get_one_random_Temp_Set(list_lenght)
 	indice=torch.random(1,list_lenght-1)
 	return {im1=indice,im2=indice+1}
 end
--- TODO better
+
+
 function get_one_random_Prop_Set(Infos1)
 	local WatchDog=0
 	local size1=#Infos1.dx
 	local vector=torch.randperm(size1-1)
 
 	while WatchDog<100 do
-		local indice1=torch.random(2,size1-1)
+		local indice1=torch.random(1,size1-1)
 		local indice2=indice1+1
 
-		for i=1, size2-1 do
+		for i=1, size1-1 do
 			local id=vector[i]
 			local id2=id+1
 
@@ -155,7 +156,7 @@ function get_one_random_Prop_Set(Infos1)
 				arrondit(Infos1.dy[indice1]-Infos1.dy[id])==0 and
 				arrondit(Infos1.dz[indice1]-Infos1.dz[id])==0 then
 				return {im1=indice1,im2=indice2,im3=id,im4=id2}
-			elseif arrondit(Infos1.dx[indice1]+Infos1.dx[id])==0 and
+			elseif id2~=indice1 and arrondit(Infos1.dx[indice1]+Infos1.dx[id])==0 and
 				arrondit(Infos1.dy[indice1]+Infos1.dy[id])==0 and
 				arrondit(Infos1.dz[indice1]+Infos1.dz[id])==0 then
 				return {im1=indice1,im2=indice2,im3=id2,im4=id}
@@ -180,7 +181,7 @@ function get_two_Prop_Pair(Infos1, Infos2)
 	local size1=#Infos1.dx
 	local size2=#Infos2.dx
 
-	vector=torch.randperm(size2-1)
+	local vector=torch.randperm(size2-1)
 
 	while WatchDog<100 do
 		local indice1=torch.random(1,size1-1)
@@ -216,39 +217,34 @@ function get_one_random_Caus_Set(Infos1,Infos2)
 	local dx=2
 	local dy=3
 	local dz=4
-	local tensor, label=tensorFromTxt(txt1)
-	local tensor2, label=tensorFromTxt(txt2)
 
 	local size1=#Infos1.dx
 	local size2=#Infos2.dx
 	vector=torch.randperm(size2-1)
 
-	while WatchDog<500 do
+	while WatchDog<1000 do
 		repeat
 			indice1=torch.random(1,size1-1)
 			indice2=indice1+1
 		until(Infos1.reward[indice1]==0 and Infos1.reward[indice2]==0)
 
 		for i=1, size2-1 do
-			if vector[i]~=1 then-- the first image is bad
-				id=vector[i]
-				id2=id+1
+			id=vector[i]
+			id2=id+1
+			if arrondit(Infos1.dx[indice1]-Infos2.dx[id])==0 and
+				arrondit(Infos1.dy[indice1]-Infos2.dy[id])==0 and
+				arrondit(Infos1.dz[indice1]-Infos2.dz[id])==0 and
+				Infos2.reward[id2]==1 and
+				Infos2.reward[id]==0 then
 
-				if arrondit(Infos1.dx[indice1]-Infos2.dx[id])==0 and
-					arrondit(Infos1.dy[indice1]-Infos2.dy[id])==0 and
-					arrondit(Infos1.dz[indice1]-Infos2.dz[id])==0 and
-					Infos2.reward[id2]==1 and
-					Infos2.reward[id]==0 then
+				return {im1=indice1,im2=id}
+			elseif arrondit(Infos1.dx[indice1]+Infos2.dx[id])==0 and
+				arrondit(Infos1.dy[indice1]+Infos2.dy[id])==0 and
+				arrondit(Infos1.dz[indice1]+Infos2.dz[id])==0 and
+				Infos2.reward[id]==1 and
+				Infos2.reward[id2]==0 then
 
-					return {im1=indice1,im2=id}
-				elseif arrondit(Infos1.dx[indice1]+Infos2.dx[id])==0 and
-					arrondit(Infos1.dy[indice1]+Infos2.dy[id])==0 and
-					arrondit(Infos1.dz[indice1]+Infos2.dz[id])==0 and
-					Infos2.reward[id]==1 and
-					Infos2.reward[id2]==0 then
-
-					return {im1=indice1,im2=id2}
-				end
+				return {im1=indice1,im2=id2}
 			end
 		end
 		WatchDog=WatchDog+1

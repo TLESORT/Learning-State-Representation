@@ -7,9 +7,12 @@ function save_model(model,path)
 	print("Saved at : "..path)
 	model:cuda()
 	parameters, gradParameters = model:getParameters()
-	local lightModel = model:clone('weight','bias','running_mean','running_std'):double()
-	torch.save(path,model)
+	local lightModel = model:clone():float()
+	lightModel:clearState()
+	torch.save(path,lightModel)
 end
+
+
 
 ---------------------------------------------------------------------------------------
 -- Function : preprocessing(im, lenght, width, SpacialNormalization)
@@ -108,22 +111,7 @@ function dataAugmentation(im, lenght, width)
 	return im+noise
 end
 
-function printParamInAFile(path,coef_list, LR, optim, BatchSize, nbEpoch, NbBatch, model)
-	file=path.."info.txt"
-	f=io.open(file, "w")
-	f:write("Coef Temp    : "..coef_list[1].."\n")
-	f:write("Coef Prop    : "..coef_list[2].."\n")
-	f:write("Coef Rep     : "..coef_list[3].."\n")
-	f:write("Coef Caus    : "..coef_list[4].."\n")
-	f:write("\n")
-	f:write("Learning Rate: "..LR.."\n")
-	f:write("Optimisation : "..optim.."\n")
-	f:write("BatchSize    : "..BatchSize.."\n")
-	f:write("Nb Epoch     : "..nbEpoch.."\n")
-	f:write("Nb Batch     : "..NbBatch.."\n")
-	f:write("Model name   : "..model.."\n")
-	f:close()
-end
+
 
 ---------------------------------------------------------------------------------------
 -- Function :getBatch(imgs, list, indice, lenght, width, height, Type) 
@@ -156,35 +144,71 @@ function getBatch(imgs, list, indice, lenght, width, height, Type)
 	return Batch
 
 end
+---------------------------------------------------------------------------------------
+-- Function :getRandomBatchFromSeparateList(imgs1, imgs2, txt1, txt2, lenght, image_width, image_height, Mode, use_simulate_images) 
+-- Input ():
+-- Output ():
+---------------------------------------------------------------------------------------
+function getRandomBatchFromSeparateList(Data1,Data2, lenght, Mode)
 
+	local Dim=Data1.images[1]:size()
+	if Mode=="Prop" or Mode=="Rep" then
+		Batch=torch.Tensor(4, lenght,Dim[1], Dim[2], Dim[3])
+	else
+		Batch=torch.Tensor(2, lenght,Dim[1], Dim[2], Dim[3])
+	end
+
+	for i=1, lenght do
+		if Mode=="Prop" or Mode=="Rep" then
+			Set=get_two_Prop_Pair(Data1.Infos, Data2.Infos)
+			Batch[1][i]=Data1.images[Set.im1]
+			Batch[2][i]=Data1.images[Set.im2]
+			Batch[3][i]=Data2.images[Set.im3]
+			Batch[4][i]=Data2.images[Set.im4]
+		elseif Mode=="Temp" then
+			Set=get_one_random_Temp_Set(#Data1.images)
+			Batch[1][i]=Data1.images[Set.im1]
+			Batch[2][i]=Data1.images[Set.im2]
+		elseif Mode=="Caus" then
+			Set=get_one_random_Caus_Set(Data1.Infos, Data2.Infos)
+			Batch[1][i]=Data1.images[Set.im1]
+			Batch[2][i]=Data2.images[Set.im2]
+		else
+			print "getRandomBatchFromSeparateList Wrong mode "
+		end
+	end
+	return Batch
+
+end
 ---------------------------------------------------------------------------------------
 -- Function : getRandomBatch(imgs, txt, lenght, width, height, Mode, use_simulate_images)
 -- Input ():
 -- Output ():
 ---------------------------------------------------------------------------------------
-function getRandomBatch(imgs, txt,txt_reward, lenght, width, height, Mode, use_simulate_images)
+function getRandomBatch(Data1, lenght, Mode)
 	
+	local Dim=Data1.images[1]:size()
 	if Mode=="Prop" or Mode=="Rep" then
-		Batch=torch.Tensor(4, lenght,3, width, height)
+		Batch=torch.Tensor(4, lenght,Dim[1], Dim[2], Dim[3])
 	else
-		Batch=torch.Tensor(2, lenght,3, width, height)
+		Batch=torch.Tensor(2, lenght,Dim[1], Dim[2], Dim[3])
 	end
 	
 	for i=1, lenght do
 		if Mode=="Prop" or Mode=="Rep" then
-			Set=get_one_random_Prop_Set(txt)
-			Batch[1][i]=imgs[Set.im1]
-			Batch[2][i]=imgs[Set.im2]
-			Batch[3][i]=imgs[Set.im3]
-			Batch[4][i]=imgs[Set.im4]
+			Set=get_one_random_Prop_Set(Data1.Infos)
+			Batch[1][i]=Data1.images[Set.im1]
+			Batch[2][i]=Data1.images[Set.im2]
+			Batch[3][i]=Data1.images[Set.im3]
+			Batch[4][i]=Data1.images[Set.im4]
 		elseif Mode=="Temp" then
-			Set=get_one_random_Temp_Set(#imgs)
-			Batch[1][i]=imgs[Set.im1]
-			Batch[2][i]=imgs[Set.im2]
+			Set=get_one_random_Temp_Set(#Data1.images)
+			Batch[1][i]=Data1.images[Set.im1]
+			Batch[2][i]=Data1.images[Set.im2]
 		elseif Mode=="Caus" then
-			Set=get_one_random_Caus_Set(txt, txt,txt_reward,txt_reward)
-			Batch[1][i]=imgs[Set.im1]
-			Batch[2][i]=imgs[Set.im2]
+			Set=get_one_random_Caus_Set(Data1.Infos,Data1.Infos)
+			Batch[1][i]=Data1.images[Set.im1]
+			Batch[2][i]=Data1.images[Set.im2]
 		else
 			print "getRandomBatch Wrong mode "
 		end
@@ -231,42 +255,7 @@ function Get_Folder_Name(Log_Folder,list_prior)
 	return Log_Folder..name..'/'
 end
 
----------------------------------------------------------------------------------------
--- Function :getRandomBatchFromSeparateList(imgs1, imgs2, txt1, txt2, lenght, image_width, image_height, Mode, use_simulate_images) 
--- Input ():
--- Output ():
----------------------------------------------------------------------------------------
-function getRandomBatchFromSeparateList(Data1,Data2, lenght, Mode)
 
-	local Dim=Data1.images[1]:size()
-	if Mode=="Prop" or Mode=="Rep" then
-		Batch=torch.Tensor(4, lenght,Dim[1], Dim[2], Dim[3])
-	else
-		Batch=torch.Tensor(2, lenght,Dim[1], Dim[2], Dim[3])
-	end
-
-	for i=1, lenght do
-		if Mode=="Prop" or Mode=="Rep" then
-			Set=get_two_Prop_Pair(Data1.Infos, Data2.Infos)
-			Batch[1][i]=Data1.images[Set.im1]
-			Batch[2][i]=Data1.images[Set.im2]
-			Batch[3][i]=Data2.images[Set.im3]
-			Batch[4][i]=Data2.images[Set.im4]
-		elseif Mode=="Temp" then
-			Set=get_one_random_Temp_Set(#Data1.images)
-			Batch[1][i]=Data1.images[Set.im1]
-			Batch[2][i]=Data1.images[Set.im2]
-		elseif Mode=="Caus" then
-			Set=get_one_random_Caus_Set(Data1.Infos, Data2.Infos)
-			Batch[1][i]=Data1.images[Set.im1]
-			Batch[2][i]=Data2.images[Set.im2]
-		else
-			print "getRandomBatchFromSeparateList Wrong mode "
-		end
-	end
-	return Batch
-
-end
 
 ---------------------------------------------------------------------------------------
 -- Function :copy_weight(model, AE)
@@ -353,14 +342,14 @@ end
 -- Input ():
 -- Output ():
 ---------------------------------------------------------------------------------------
-function load_Part_list(list,txt,txt_reward,im_lenght,im_height,nb_part,part,train)
+function load_Part_list(list,txt,txt_reward,im_lenght,im_height,nb_part,part,train,txt_state)
 	local im={}
 	local Infos={dx={},dy={},dz={},reward={}}
 	local im_lenght=im_lenght or 200
 	local im_height=im_height or 200
 	local list_lenght = torch.floor(#list/nb_part)
 	local start=list_lenght*part +1
-	local Infos,ThereIsReward=getInfos(txt,txt_reward,start,list_lenght)
+	local Infos,ThereIsReward=getInfos(txt,txt_reward,start,list_lenght,txt_state)
 	for i=start, start+list_lenght do
 		table.insert(im,getImage(list[i],im_lenght,im_height,train))
 	end 
@@ -369,12 +358,15 @@ end
 
 
 -- pb si pas de reward....
-function getInfos(txt,txt_reward,start,lenght)
+function getInfos(txt,txt_reward,start,lenght,txt_state)
 	local Infos={dx={},dy={},dz={},reward={}}
 	local dx=2
 	local dy=3
 	local dz=4
 	local reward_indice=2
+
+local reward=0--!!!new
+local tensor_state, label=tensorFromTxt(txt_state)
 
 	local tensor, label=tensorFromTxt(txt)
 	local tensor_reward, label=tensorFromTxt(txt_reward)
@@ -383,9 +375,19 @@ function getInfos(txt,txt_reward,start,lenght)
 		table.insert(Infos.dx,tensor[i][dx])
 		table.insert(Infos.dy,tensor[i][dy])
 		table.insert(Infos.dz,tensor[i][dz])
-		table.insert(Infos.reward,tensor_reward[i][reward_indice])
+
+if math.floor(tensor_state[i][dx]*100)%20==0 or math.floor(tensor_state[i][dy]*100)%20==0 or math.floor(tensor_state[i][dz]*100)%20==0 then 
+	ThereIsReward=true
+	reward=1
+else
+	reward=0
+ end
+table.insert(Infos.reward,reward)
+--!!!!!!!!!!!!!!table.insert(Infos.reward,tensor_reward[i][reward_indice])
 --print(tensor_reward[i][reward_indice])
-		if tensor_reward[i][reward_indice]==1 then ThereIsReward=true end
+		
+
+--!!!!!!!!!!!!!!if tensor_reward[i][reward_indice]==1 then ThereIsReward=true end
        end
 
 	return Infos,ThereIsReward

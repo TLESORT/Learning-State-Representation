@@ -42,21 +42,19 @@ function Rico_Training(Models,Mode,Data1,Data2,criterion,coef,LR,BatchSize)
 		end
          	return loss,gradParameters
 	end
-        sgdState = sgdState or { learningRate = LR, momentum = mom,learningRateDecay = 5e-7,weightDecay=coefL2 }
-	parameters, loss=optim.sgd(feval, parameters, sgdState)
-
---optimState={learningRate=LR}
---parameters, loss=optim.adagrad(feval, parameters, optimState)
+        --sgdState = sgdState or { learningRate = LR, momentum = mom,learningRateDecay = 5e-7,weightDecay=coefL2 }
+	--parameters, loss=optim.sgd(feval, parameters, sgdState)
+optimState={learningRate=LR}
+parameters, loss=optim.adagrad(feval, parameters, optimState)
 
 	 -- loss[1] table of one value transformed in just a value
 	 -- grad[1] we use just the first gradient to print the figure (there are 2 or 4 gradient normally)
-
-	return loss[1], grad:mean()
+	return loss[1], grad
 end
 
 
 function train_Epoch(Models,Prior_Used,Log_Folder,LR)
-	local nbEpoch=100
+	local nbEpoch=25
 	local NbBatch=100
 	local BatchSize=2
 	
@@ -72,7 +70,7 @@ function train_Epoch(Models,Prior_Used,Log_Folder,LR)
 	local Temp_loss_list_test,Prop_loss_list_test,Rep_loss_list_test,Caus_loss_list_test = {},{},{},{}
 	local Sum_loss_train, Sum_loss_test = {},{}
 	local Temp_grad_list,Prop_grad_list,Rep_grad_list,Caus_grad_list = {},{},{},{}		
-	local list_errors={}
+	local list_errors,list_MI, list_corr={},{},{}
 
 	local Prop=Have_Todo(Prior_Used,'Prop')
 	local Temp=Have_Todo(Prior_Used,'Temp')
@@ -89,55 +87,53 @@ print(Caus)
 	local coef_Caus=1
 	local coef_list={coef_Temp,coef_Prop,coef_Rep,coef_Caus}
 
-
-	local list_truth=images_Paths(list_folders_images[nbList])
-	txt_test=list_txt_state[nbList]
-	txt_reward_test=list_txt_button[nbList]
-	Data_test=load_Part_list(list_truth,txt_test,txt_reward_test,image_width,image_height,10,1,false)
-	imgs_test=Data_test.images
+indice_test=4 --nbList
+	local list_truth=images_Paths(list_folders_images[indice_test])
+	txt_test=list_txt_state[indice_test]
+	txt_reward_test=list_txt_button[indice_test]
+	Data_test=load_Part_list(list_truth,txt_test,txt_reward_test,image_width,image_height,50,0,false,txt_test)
 	local truth=getTruth(txt_test)
-	show_figure(truth, Log_Folder..'The_Truth.Log')
-	Print_performance(Models, imgs_test,txt_test,txt_reward_test,"First_Test",Log_Folder,truth)
+	show_figure(truth, Log_Folder..'The_Truth.Log','Truth',Data_test.Infos)
+	Print_performance(Models, Data_test,txt_test,txt_reward_test,"First_Test",Log_Folder,truth)
 
 	--real_temp_loss,real_prop_loss,real_rep_loss, real_caus_loss=real_loss(txt_test)
 	--print("temp loss : "..real_temp_loss)
 	--print("prop loss : "..real_prop_loss[1])
 	--print("rep loss : "..real_rep_loss[1])	
 	--print("caus loss : "..real_caus_loss[1])
-	--printParamInAFile(Log_Folder,coef_list, LR, "adagrad", BatchSize, nbEpoch, NbBatch)
+
+	print(nbList..' : sequences')
+	printParamInAFile(Log_Folder,coef_list, LR, "LR+mom", BatchSize, nbEpoch, NbBatch, model_file)
+
+
 			
 	for epoch=1, nbEpoch do
 		print('--------------Epoch : '..epoch..' ---------------')
-		print(nbList..' : sequences')
+		local Temp_loss,Prop_loss,Rep_loss,Caus_loss=0,0,0,0
+		local Grad_Temp,Grad_Prop,Grad_Rep,Grad_Caus=0,0,0,0
 
-		local Temp_loss=0
-		local Prop_loss=0
-		local Rep_loss=0
-		local Caus_loss=0
 
-		local Grad_Temp=0
-		local Grad_Prop=0
-		local Grad_Rep=0
-		local Grad_Caus=0
-
-		indice1=torch.random(1,nbList-1)
+		local indice1=torch.random(1,nbList-1)
 		repeat indice2=torch.random(1,nbList-1) until (indice1 ~= indice2)
 
-		txt1=list_txt_action[indice1]
-		txt2=list_txt_action[indice2]
-		txt_reward1=list_txt_button[indice1]
-		txt_reward2=list_txt_button[indice2]
 
-		local nb_part=5
-		local part1=torch.random(0,nb_part-1)
-		local part2=torch.random(0,nb_part-1)
+--------------------------------- only one list used---------------------------------------------------------------
+indice1=4
+indice2=4
+		local txt1=list_txt_action[indice1]
+		local txt2=list_txt_action[indice2]
+		local txt_reward1=list_txt_button[indice1]
+		local txt_reward2=list_txt_button[indice2]
+		local txt_state1=list_txt_state[indice1]
+		local txt_state2=list_txt_state[indice2]
+		local nb_part=50
+		local part1=torch.random(1,nb_part-1)--(0,nb_part) (la part 0 est gardée pour le test)
+		repeat  part2=torch.random(1,nb_part-1) until (part1 ~= part2)
 -- for debug
-		list1=images_Paths(list_folders_images[indice1])
-		list2=images_Paths(list_folders_images[indice2])
-		Data1,ThereIsReward=load_Part_list(list1,txt1,txt_reward1,image_width,image_height,nb_part,part1,false)--without data augmentation
-		Data2,ThereIsReward2=load_Part_list(list2,txt2,txt_reward2,image_width,image_height,nb_part,part2,false)--without data augmentation
-
-	printParamInAFile(Log_Folder,coef_list, LR, "LR+mom", BatchSize, nbEpoch, NbBatch, model_file)
+		local list1=images_Paths(list_folders_images[indice1])
+		local list2=images_Paths(list_folders_images[indice2])
+		local Data1,ThereIsReward=load_Part_list(list1,txt1,txt_reward1,image_width,image_height,nb_part,part1,false,txt_state1)--without data augmentation
+		local Data2,ThereIsReward2=load_Part_list(list2,txt2,txt_reward2,image_width,image_height,nb_part,part2,false,txt_state2)--without data augmentation
 
 		for numBatch=1, NbBatch do
 			if Temp then
@@ -156,16 +152,20 @@ print(Caus)
 				Rep_loss=Rep_loss+Loss
 			end
 			if Caus and (ThereIsReward and ThereIsReward2) then 
-				Loss,Grad=Rico_Training(Models, 'Caus',Data1,Data2, CAUS_criterion, coef_Caus,LR,BatchSize)
+				Loss,Grad=Rico_Training(Models,'Caus',Data1,Data2,CAUS_criterion,coef_Caus,LR,BatchSize)
 				Grad_Caus=Grad_Caus+Grad
 				Caus_loss=Caus_loss+Loss
 			end
 			xlua.progress(numBatch, NbBatch)
 		end
-		
-		save_model(Models.Model1,name_save)
+
 		local id=name..epoch -- variable used to not mix several log files
-		Temp_test,Prop_test,Rep_test,Caus_test, list_estimation=Print_performance(Models, imgs_test,txt_test,txt_reward_test,id.."_Test",Log_Folder,truth)
+		Temp_test,Prop_test,Rep_test,Caus_test, list_estimation,M_I,corr=Print_performance(Models, Data_test,txt_test,txt_reward_test,id.."_Test",Log_Folder,truth)
+
+				
+		table.insert(list_MI,M_I)
+		show_MI(list_MI, Log_Folder..'Mutuelle_Info.log')
+		Print_Corr(corr,epoch,Log_Folder)
 
 		table.insert(Temp_loss_list,Temp_loss/NbBatch)
 		table.insert(Prop_loss_list,Prop_loss/NbBatch)
@@ -182,38 +182,51 @@ print(Caus)
 		table.insert(Rep_grad_list,Grad_Rep/NbBatch)
 		table.insert(Caus_grad_list,Grad_Caus/NbBatch)
 
-		
 		sum_train=(Temp_loss+Prop_loss+Rep_loss+Caus_loss)/NbBatch
 		table.insert(Sum_loss_train,sum_train)
 		table.insert(Sum_loss_test,Temp_test+Prop_test+Rep_test+Caus_test)
 
-		show_loss(Temp_loss_list,Temp_loss_list_test, Log_Folder..'Temp_loss.log', 1000)
-		show_loss(Prop_loss_list,Prop_loss_list_test, Log_Folder..'Prop_loss.log', 1000)
-		show_loss(Rep_loss_list,Rep_loss_list_test, Log_Folder..'Rep_loss.log', 1000)
-		show_loss(Caus_loss_list,Caus_loss_list_test, Log_Folder..'Caus_loss.log', 1000)
-		show_loss(Sum_loss_train,Sum_loss_test, Log_Folder..'Sum_loss.log', 1000)
-		Print_Grad(Temp_grad_list,Prop_grad_list,Rep_grad_list,Caus_grad_list,Log_Folder)
+		show_loss(Temp_loss_list,Temp_loss_list_test, Log_Folder..'Temp_loss.log')
+		show_loss(Prop_loss_list,Prop_loss_list_test, Log_Folder..'Prop_loss.log')
+		show_loss(Rep_loss_list,Rep_loss_list_test, Log_Folder..'Rep_loss.log')
+		show_loss(Caus_loss_list,Caus_loss_list_test, Log_Folder..'Caus_loss.log')
+		show_loss(Sum_loss_train,Sum_loss_test, Log_Folder..'Sum_loss.log')
+		Print_Grad(Temp_grad_list,Prop_grad_list,Rep_grad_list,Caus_grad_list,Log_Folder)		
+		save_model(Models.Model1,name_save)
 	end
-
 end
 
-
-day="23-09"
-local UseSecondGPU= false
+day="11-10-newReward2"
+local UseSecondGPU= true
 local LR=0.001
 local Dimension=3
 
-Tests_Todo={{"Prop","Rep","Caus","Temp"}}
+Tests_Todo={
+{"Prop","Temp","Caus","Rep"},
+{"Rep","Caus"},
+{"Prop","Caus"},
+{"Temp","Caus"},
+{"Temp","Prop"},
+{"Rep","Prop"},
+{"Rep","Temp"},
+{"Rep","Caus","Prop"},
+{"Rep","Caus","Temp"},
+{"Rep","Prop","Temp"},
+{"Prop","Caus","Temp"},
+{"Rep"},
+{"Temp"},
+{"Caus"},
+{"Prop"}
+}
 
 local Log_Folder='./Log/'..day..'/'
-
 
 name_load='./Log/Save/'..day..'.t7'
 
 list_folders_images, list_txt_action,list_txt_button, list_txt_state=Get_HeadCamera_View_Files()
 local reload=false
 local TakeWeightFromAE=false
-model_file='./models/topUniqueFM_Deeper2'
+model_file='./models/topTripleFM_Split'
 
 
 image_width=200
@@ -241,6 +254,7 @@ for nb_test=1, #Tests_Todo do
 	else
 		require(model_file)
 		Model=getModel(Dimension)	
+		--graph.dot(Model.fg, 'Big MLP')
 	end
 	Model=Model:cuda()
 	parameters,gradParameters = Model:getParameters()
