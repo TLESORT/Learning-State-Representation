@@ -81,7 +81,7 @@ print(Temp)
 print(Rep)
 print(Caus)
 
-	local coef_Temp=1
+	local coef_Temp=0.1
 	local coef_Prop=1
 	local coef_Rep=1
 	local coef_Caus=1
@@ -196,23 +196,23 @@ indice2=4
 	end
 end
 
-day="11-10-newReward2"
+day="12-10-newReward"
 local UseSecondGPU= true
 local LR=0.001
 local Dimension=3
 
 Tests_Todo={
 {"Prop","Temp","Caus","Rep"},
+{"Rep","Caus","Prop"},
+{"Rep","Caus","Temp"},
+{"Rep","Prop","Temp"},
+{"Prop","Caus","Temp"},
 {"Rep","Caus"},
 {"Prop","Caus"},
 {"Temp","Caus"},
 {"Temp","Prop"},
 {"Rep","Prop"},
 {"Rep","Temp"},
-{"Rep","Caus","Prop"},
-{"Rep","Caus","Temp"},
-{"Rep","Prop","Temp"},
-{"Prop","Caus","Temp"},
 {"Rep"},
 {"Temp"},
 {"Caus"},

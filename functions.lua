@@ -405,7 +405,7 @@ function getImage(im,length,height, train)
 	local format=length.."x"..height
 	local img1_rsz=image.scale(image1,format)
 -- vague normalisation pour garder des poids petits mais un peu écarté
-	return (img1_rsz-0.5)/0.2 --preprocessing(img1_rsz,length,height, train)
+	return preprocessing(img1_rsz,length,height, train) --(img1_rsz-0.5)/0.2
 end
 
 

@@ -98,7 +98,7 @@ end
 function mutual_information(Real, Estimate)
 	local real=torch.floor(Real:clone()*1000)/1000
 	local estimate=torch.floor(Estimate:clone()*1000)/1000
-	local division=3
+	local division=5
 	local eps=0--.000001
 
 	local pas_x_real=(real[1]:max()-real[1]:min())/division
