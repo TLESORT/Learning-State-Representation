@@ -75,11 +75,11 @@ local function gamma(im)
 	return Gamma
 end
 
-local function transformation(im, v,e)
+local function transformation(im, v,e, fact)
 	local transfo=torch.Tensor(3,200,200)
 	local Gamma=torch.mv(v,e)
 	for i=1, 3 do
-		transfo[i]=im[i]+Gamma[i]
+		transfo[i]=im[i]+Gamma[i]*fact
 	end
  return transfo
 end
@@ -92,12 +92,13 @@ end
 ---------------------------------------------------------------------------------------
 function dataAugmentation(im, lenght, width)
 	local channels = {'y','u','v'}
-
+	local fact =0.01	
+	
 	gam=gamma(im)
 	e, V = torch.eig(gam,'V')
 	factors=torch.randn(3)*0.1
 	for i=1,3 do e:select(2, 1)[i]=e:select(2, 1)[i]*factors[i] end
-	im=transformation(im, V,e:select(2, 1))
+	im=transformation(im, V,e:select(2, 1),fact)
 	noise=torch.rand(3,lenght,width)
 	local mean = {}
 	local std = {}
@@ -108,7 +109,7 @@ function dataAugmentation(im, lenght, width)
 	   noise[{i,{},{}}]:add(-mean[i])
 	   noise[{i,{},{}}]:div(std[i])
 	end
-	return im+noise
+	return im+noise*fact
 end
 
 
@@ -404,8 +405,7 @@ function getImage(im,length,height, train)
 	local image1=image.load(im,3,'float')
 	local format=length.."x"..height
 	local img1_rsz=image.scale(image1,format)
--- vague normalisation pour garder des poids petits mais un peu écarté
-	return (img1_rsz-0.5)/0.2 --preprocessing(img1_rsz,length,height, train)
+	return preprocessing(img1_rsz,length,height, train) 
 end
 
 

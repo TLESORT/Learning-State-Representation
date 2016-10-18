@@ -260,14 +260,17 @@ end
 -- Input (arrondit) :
 -- Output (truth): 
 ---------------------------------------------------------------------------------------
-function getTruth(txt_joint)
+function getTruth(txt_joint, nb_part, part)
 	local x=2
 	local y=3
 	local z=4
+	
 	local tensor, label=tensorFromTxt(txt_joint)
+	local list_lenght = torch.floor((#tensor[{}])[1]/nb_part)
+	local start=list_lenght*part +1
 
 	local list_truth={}
-	for i=1, 100 do--(#tensor[{}])[1] do	
+	for i=start, start+list_lenght do--(#tensor[{}])[1] do	
 		local truth=torch.Tensor(3)
 		truth[1]=tensor[i][x]
 		truth[2]=tensor[i][y]

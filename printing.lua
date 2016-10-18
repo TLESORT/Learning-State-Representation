@@ -56,25 +56,10 @@ function print_correlation(truth,output,dimension)
 		end
 	end
 	Correlation=ComputeCorrelation(Truth,Output,dimension,"Correlation")
-	--ComputeCorrelation(Truth,Truth,dimension,"InterCorrelation Truth")
-	--ComputeCorrelation(Output,Output,dimension,"InterCorrelation output")
-
---!! attention si les axes sont inversés la correlation 3D sera fausse, (?)
-	--ComputeMax3DCorrelation(Truth,Output,dimension,"Max 3D correlation")
 	
 	mutual_info=mutual_information(Truth, Truth:float())	
 	print("Mutual Info Référence")
 	print(mutual_info)
---[[	print("test IM")
-	test=torch.Tensor(Truth:size())
-	test:copy(Truth)
-	D1=test[1]:clone()
-	D2=test[2]:clone()	
-	D3=test[3]:clone()
-	--test[1],test[2],test[3]=test[1]-test[2],test[2]+2*test[1],4*test[3]
-	test[1],test[2],test[3]=D2-D1,D1+D2,4*D3
-	mutual_info=mutual_information(Truth, test)
-	print(mutual_info)--]]
 	print("Mutual Info")
 	mutual_info=mutual_information(Truth, Output)
 	print(mutual_info)
@@ -98,8 +83,7 @@ end
 function mutual_information(Real, Estimate)
 	local real=torch.floor(Real:clone()*1000)/1000
 	local estimate=torch.floor(Estimate:clone()*1000)/1000
-	local division=3
-	local eps=0--.000001
+	local division=5
 
 	local pas_x_real=(real[1]:max()-real[1]:min())/division
 	local pas_y_real=(real[2]:max()-real[2]:min())/division
@@ -116,13 +100,13 @@ function mutual_information(Real, Estimate)
 
 	for i=1 , real[1]:size(1) do
 		for j=1, division do
-			if real[1][i]<=(j*pas_x_real+real[1]:min()+eps) and real[1][i]>=((j-1)*pas_x_real+real[1]:min()-eps)  then x_real=j end
-			if real[2][i]<=(j*pas_y_real+real[2]:min()+eps) and real[2][i]>=((j-1)*pas_y_real+real[2]:min()-eps)  then y_real=j end
-			if real[3][i]<=(j*pas_z_real+real[3]:min()+eps) and real[3][i]>=((j-1)*pas_z_real+real[3]:min()-eps)  then z_real=j end
+			if real[1][i]<=(j*pas_x_real+real[1]:min()) and real[1][i]>=((j-1)*pas_x_real+real[1]:min())  then x_real=j end
+			if real[2][i]<=(j*pas_y_real+real[2]:min()) and real[2][i]>=((j-1)*pas_y_real+real[2]:min())  then y_real=j end
+			if real[3][i]<=(j*pas_z_real+real[3]:min()) and real[3][i]>=((j-1)*pas_z_real+real[3]:min())  then z_real=j end
 
-			if estimate[1][i]<=(j*pas_x_estimate+estimate[1]:min()+eps) and estimate[1][i]>=((j-1)*pas_x_estimate+estimate[1]:min()-eps) then x_estimate=j end
-			if estimate[2][i]<=(j*pas_y_estimate+estimate[2]:min()+eps) and estimate[2][i]>=((j-1)*pas_y_estimate+estimate[2]:min()-eps) then y_estimate=j end
-			if estimate[3][i]<=(j*pas_z_estimate+estimate[3]:min()+eps) and estimate[3][i]>=((j-1)*pas_z_estimate+estimate[3]:min()-eps) then z_estimate=j end
+			if estimate[1][i]<=(j*pas_x_estimate+estimate[1]:min()) and estimate[1][i]>=((j-1)*pas_x_estimate+estimate[1]:min()) then x_estimate=j end
+			if estimate[2][i]<=(j*pas_y_estimate+estimate[2]:min()) and estimate[2][i]>=((j-1)*pas_y_estimate+estimate[2]:min()) then y_estimate=j end
+			if estimate[3][i]<=(j*pas_z_estimate+estimate[3]:min()) and estimate[3][i]>=((j-1)*pas_z_estimate+estimate[3]:min()) then z_estimate=j end
 		end
 		prob_real[x_real][y_real][z_real]=prob_real[x_real][y_real][z_real]+1
 		prob_estimate[x_estimate][y_estimate][z_estimate]=prob_estimate[x_estimate][y_estimate][z_estimate]+1
@@ -154,32 +138,6 @@ function mutual_information(Real, Estimate)
 	end
 	return mutual_info
 
-end
-
-function ComputeMax3DCorrelation(Truth,Output,dimension,label)
-
--- FEW CORRECTION TODO
-	local res=0
-	local norm_truth=Truth-Truth:mean()
-	local prod_std=(Truth:std()*Output:std())
-	local mean_output=Output:mean()
-	local signal=torch.Tensor(Output:size())
-	for i=1,dimension do
-		for j=1, dimension do
-			for k=1, dimension do
-				if k~=j and k~=i and i~=j then
-					signal[1]:copy(Output[i])
-					signal[2]:copy(Output[j])
-					signal[3]:copy(Output[k])
-					corr=torch.cmul(norm_truth,(signal-mean_output)):mean()
-					corr=corr/prod_std
-					if math.abs(corr)>res then res=math.abs(corr) end
-				end
-			end
-		end
-	end
-	print(label)
-	print(res)
 end
 
 ---------------------------------------------------------------------------------------

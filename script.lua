@@ -54,8 +54,8 @@ end
 
 
 function train_Epoch(Models,Prior_Used,Log_Folder,LR)
-	local nbEpoch=25
-	local NbBatch=100
+	local nbEpoch=100
+	local NbBatch=10
 	local BatchSize=2
 	
 	local name='Save'..day
@@ -91,8 +91,10 @@ indice_test=4 --nbList
 	local list_truth=images_Paths(list_folders_images[indice_test])
 	txt_test=list_txt_state[indice_test]
 	txt_reward_test=list_txt_button[indice_test]
-	Data_test=load_Part_list(list_truth,txt_test,txt_reward_test,image_width,image_height,50,0,false,txt_test)
-	local truth=getTruth(txt_test)
+nb_part=50
+part_test=1
+	Data_test=load_Part_list(list_truth,txt_test,txt_reward_test,image_width,image_height,nb_part,part_test,false,txt_test)
+	local truth=getTruth(txt_test,nb_part,part_test)
 	show_figure(truth, Log_Folder..'The_Truth.Log','Truth',Data_test.Infos)
 	Print_performance(Models, Data_test,txt_test,txt_reward_test,"First_Test",Log_Folder,truth)
 
@@ -103,7 +105,7 @@ indice_test=4 --nbList
 	--print("caus loss : "..real_caus_loss[1])
 
 	print(nbList..' : sequences')
-	printParamInAFile(Log_Folder,coef_list, LR, "LR+mom", BatchSize, nbEpoch, NbBatch, model_file)
+	printParamInAFile(Log_Folder,coef_list, LR, "Adagrad", BatchSize, nbEpoch, NbBatch, model_file)
 
 
 			
@@ -127,8 +129,8 @@ indice2=4
 		local txt_state1=list_txt_state[indice1]
 		local txt_state2=list_txt_state[indice2]
 		local nb_part=50
-		local part1=torch.random(1,nb_part-1)--(0,nb_part) (la part 0 est gardée pour le test)
-		repeat  part2=torch.random(1,nb_part-1) until (part1 ~= part2)
+		local part1=torch.random(2,nb_part-1)--(0,nb_part) 1 est gardée pour le test, 0 est mauvaise
+		repeat  part2=torch.random(2,nb_part-1) until (part1 ~= part2)
 -- for debug
 		local list1=images_Paths(list_folders_images[indice1])
 		local list2=images_Paths(list_folders_images[indice2])
@@ -196,23 +198,23 @@ indice2=4
 	end
 end
 
-day="11-10-newReward2"
+day="17-10-newReward"
 local UseSecondGPU= true
 local LR=0.001
 local Dimension=3
 
 Tests_Todo={
 {"Prop","Temp","Caus","Rep"},
+{"Rep","Caus","Prop"},
+{"Rep","Caus","Temp"},
+{"Rep","Prop","Temp"},
+{"Prop","Caus","Temp"},
 {"Rep","Caus"},
 {"Prop","Caus"},
 {"Temp","Caus"},
 {"Temp","Prop"},
 {"Rep","Prop"},
 {"Rep","Temp"},
-{"Rep","Caus","Prop"},
-{"Rep","Caus","Temp"},
-{"Rep","Prop","Temp"},
-{"Prop","Caus","Temp"},
 {"Rep"},
 {"Temp"},
 {"Caus"},
