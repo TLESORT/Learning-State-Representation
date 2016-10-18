@@ -134,8 +134,8 @@ indice2=4
 -- for debug
 		local list1=images_Paths(list_folders_images[indice1])
 		local list2=images_Paths(list_folders_images[indice2])
-		local Data1,ThereIsReward=load_Part_list(list1,txt1,txt_reward1,image_width,image_height,nb_part,part1,false,txt_state1)--without data augmentation
-		local Data2,ThereIsReward2=load_Part_list(list2,txt2,txt_reward2,image_width,image_height,nb_part,part2,false,txt_state2)--without data augmentation
+		local Data1,ThereIsReward=load_Part_list(list1,txt1,txt_reward1,image_width,image_height,nb_part,part1,true,txt_state1)--with small data augmentation
+		local Data2,ThereIsReward2=load_Part_list(list2,txt2,txt_reward2,image_width,image_height,nb_part,part2,true,txt_state2)--with small data augmentation
 
 		for numBatch=1, NbBatch do
 			if Temp then
@@ -198,7 +198,7 @@ indice2=4
 	end
 end
 
-day="17-10-newReward"
+day="18-10"
 local UseSecondGPU= true
 local LR=0.001
 local Dimension=3
@@ -208,7 +208,8 @@ Tests_Todo={
 {"Rep","Caus","Prop"},
 {"Rep","Caus","Temp"},
 {"Rep","Prop","Temp"},
-{"Prop","Caus","Temp"},
+{"Prop","Caus","Temp"},}
+--[[
 {"Rep","Caus"},
 {"Prop","Caus"},
 {"Temp","Caus"},
@@ -219,7 +220,7 @@ Tests_Todo={
 {"Temp"},
 {"Caus"},
 {"Prop"}
-}
+}--]]
 
 local Log_Folder='./Log/'..day..'/'
 
