@@ -212,6 +212,43 @@ end
 
 -- NB : the two states will be took in different list but the two list can be the same
 
+local function causality_applicable(Infos1,Infos2,indice1,indice2,id, delta)
+	id2=id+delta
+	if delta==1 and arrondit(Infos1.dx[indice1]-Infos2.dx[id])==0 and
+		arrondit(Infos1.dy[indice1]-Infos2.dy[id])==0 and
+		arrondit(Infos1.dz[indice1]-Infos2.dz[id])==0 and
+		Infos2.reward[id2]==1 and
+		Infos2.reward[id]==0 then
+		return true
+	elseif delta==2 and arrondit(Infos1.dx[indice1]-Infos2.dx[id]+Infos1.dx[indice1+1]-Infos2.dx[id+1])==0 and
+		arrondit(Infos1.dy[indice1]-Infos2.dy[id]+Infos1.dy[indice1+1]-Infos2.dy[id+1])==0 and
+		arrondit(Infos1.dz[indice1]-Infos2.dz[id]+Infos1.dz[indice1+1]-Infos2.dz[id+1])==0 and
+		Infos2.reward[id2]==1 and
+		Infos2.reward[id]==0 then
+		return true
+	else
+		return false
+	end
+end
+local function causality_applicable2(Infos1,Infos2,indice1,indice2,id, delta)
+	id2=id+delta
+	if delta==1 and arrondit(Infos1.dx[indice1]+Infos2.dx[id])==0 and
+		arrondit(Infos1.dy[indice1]+Infos2.dy[id])==0 and
+		arrondit(Infos1.dz[indice1]+Infos2.dz[id])==0 and
+		Infos2.reward[id]==1 and
+		Infos2.reward[id2]==0 then
+		return true
+	elseif delta==2 and arrondit(Infos1.dx[indice1]+Infos2.dx[id]+Infos1.dx[indice1+1]+Infos2.dx[id+1])==0 and
+		arrondit(Infos1.dy[indice1]+Infos2.dy[id]+Infos1.dy[indice1+1]+Infos2.dy[id+1])==0 and
+		arrondit(Infos1.dz[indice1]+Infos2.dz[id]+Infos1.dz[indice1+1]+Infos2.dz[id+1])==0 and
+		Infos2.reward[id]==1 and
+		Infos2.reward[id2]==0 then
+		return true
+	else
+		return false
+	end
+end
+
 function get_one_random_Caus_Set(Infos1,Infos2)
 	local WatchDog=0
 	local dx=2
@@ -231,20 +268,14 @@ function get_one_random_Caus_Set(Infos1,Infos2)
 		for i=1, size2-1 do
 			id=vector[i]
 			id2=id+1
-			if arrondit(Infos1.dx[indice1]-Infos2.dx[id])==0 and
-				arrondit(Infos1.dy[indice1]-Infos2.dy[id])==0 and
-				arrondit(Infos1.dz[indice1]-Infos2.dz[id])==0 and
-				Infos2.reward[id2]==1 and
-				Infos2.reward[id]==0 then
-
+			if causality_applicable(Infos1,Infos2,indice1,indice2,id, 1) then
 				return {im1=indice1,im2=id}
-			elseif arrondit(Infos1.dx[indice1]+Infos2.dx[id])==0 and
-				arrondit(Infos1.dy[indice1]+Infos2.dy[id])==0 and
-				arrondit(Infos1.dz[indice1]+Infos2.dz[id])==0 and
-				Infos2.reward[id]==1 and
-				Infos2.reward[id2]==0 then
-
-				return {im1=indice1,im2=id2}
+			elseif causality_applicable(Infos1,Infos2,indice1,indice2,id, 2) then
+				return {im1=indice1,im2=id}
+			elseif causality_applicable2(Infos1,Infos2,indice1,indice2,id, 1) then
+				return {im1=indice1,im2=id+1}
+			elseif causality_applicable2(Infos1,Infos2,indice1,indice2,id, 2) then
+				return {im1=indice1,im2=id+2}
 			end
 		end
 		WatchDog=WatchDog+1
