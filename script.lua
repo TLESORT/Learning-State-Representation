@@ -81,8 +81,8 @@ print(Temp)
 print(Rep)
 print(Caus)
 
-	local coef_Temp=1
-	local coef_Prop=1
+	local coef_Temp=0.1
+	local coef_Prop=0.1
 	local coef_Rep=1
 	local coef_Caus=1
 	local coef_list={coef_Temp,coef_Prop,coef_Rep,coef_Caus}
@@ -93,7 +93,7 @@ indice_test=4 --nbList
 	txt_reward_test=list_txt_button[indice_test]
 nb_part=50
 part_test=1
-	Data_test=load_Part_list(list_truth,txt_test,txt_reward_test,image_width,image_height,nb_part,part_test,false,txt_test)
+	Data_test=load_Part_list(list_truth,txt_test,txt_reward_test,image_width,image_height,nb_part,part_test,0,txt_test)
 	local truth=getTruth(txt_test,nb_part,part_test)
 	show_figure(truth, Log_Folder..'The_Truth.Log','Truth',Data_test.Infos)
 	Print_performance(Models, Data_test,txt_test,txt_reward_test,"First_Test",Log_Folder,truth)
@@ -134,8 +134,8 @@ indice2=4
 -- for debug
 		local list1=images_Paths(list_folders_images[indice1])
 		local list2=images_Paths(list_folders_images[indice2])
-		local Data1,ThereIsReward=load_Part_list(list1,txt1,txt_reward1,image_width,image_height,nb_part,part1,true,txt_state1)--with small data augmentation
-		local Data2,ThereIsReward2=load_Part_list(list2,txt2,txt_reward2,image_width,image_height,nb_part,part2,true,txt_state2)--with small data augmentation
+		local Data1,ThereIsReward=load_Part_list(list1,txt1,txt_reward1,image_width,image_height,nb_part,part1,0.01,txt_state1)--with small data augmentation
+		local Data2,ThereIsReward2=load_Part_list(list2,txt2,txt_reward2,image_width,image_height,nb_part,part2,0.01,txt_state2)--with small data augmentation
 
 		for numBatch=1, NbBatch do
 			if Temp then
@@ -198,7 +198,7 @@ indice2=4
 	end
 end
 
-day="18-10"
+day="19-10"
 local UseSecondGPU= true
 local LR=0.001
 local Dimension=3

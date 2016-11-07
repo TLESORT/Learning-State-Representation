@@ -19,7 +19,7 @@ end
 -- Input ():
 -- Output ():
 ---------------------------------------------------------------------------------------
-function preprocessing(im, lenght, width,train)
+function preprocessing(im, lenght, width,coef_DA)
 
 		-- Name channels for convenience
 	local channels = {'y','u','v'}
@@ -50,7 +50,7 @@ function preprocessing(im, lenght, width,train)
 		      data[{{c},{},{} }] = normalization:forward(data[{{c},{},{} }])
 		end
  	end--]]
-	if train then data=dataAugmentation(data, lenght, width) end
+	if coef_DA ~=0 then data=dataAugmentation(data, lenght, width,coef_DA) end
 
 	return data
 end
@@ -84,21 +84,24 @@ local function transformation(im, v,e, fact)
  return transfo
 end
 
+
+function loi_normal(x,y,center_x,center_y,std_x,std_y)
+ return math.exp(-(x-center_x)^2/(2*std_x^2))*math.exp(-(y-center_y)^2/(2*std_y^2))
+end
 ---------------------------------------------------------------------------------------
 -- Function : dataAugmentation(im, lenght, width)
 -- Input ():
 -- Output ():
 -- goal : By using data augmentation we want or network to be more resistant to no task relevant perturbations like luminosity variation or noise
 ---------------------------------------------------------------------------------------
-function dataAugmentation(im, lenght, width)
-	local channels = {'y','u','v'}
-	local fact =0.01	
+function dataAugmentation(im, lenght, width,coef_DA)
+	local channels = {'y','u','v'}	
 	
 	gam=gamma(im)
 	e, V = torch.eig(gam,'V')
 	factors=torch.randn(3)*0.1
 	for i=1,3 do e:select(2, 1)[i]=e:select(2, 1)[i]*factors[i] end
-	im=transformation(im, V,e:select(2, 1),fact)
+	im=transformation(im, V,e:select(2, 1),coef_DA)
 	noise=torch.rand(3,lenght,width)
 	local mean = {}
 	local std = {}
@@ -109,7 +112,19 @@ function dataAugmentation(im, lenght, width)
 	   noise[{i,{},{}}]:add(-mean[i])
 	   noise[{i,{},{}}]:div(std[i])
 	end
-	return im+noise*fact
+	--[[
+	Gaus=torch.zeros(200,200)
+	foyer_x=torch.random(1,200)
+	foyer_y=torch.random(1,200)	
+	std_x=torch.random(1,5)
+	std_y=torch.random(1,5)
+	for x=1,200 do
+		for y=1,200 do
+			Gaus[x][y]=loi_normal(x/20,y/20,foyer_x/20,foyer_y/20,std_x,std_y)
+		end
+	end
+	return im+noise--]]
+	return im+noise*coef_DA
 end
 
 
@@ -400,12 +415,12 @@ end
 -- Input ():
 -- Output ():
 ---------------------------------------------------------------------------------------
-function getImage(im,length,height, train)
+function getImage(im,length,height, coef_DA)
 	if im=='' or im==nil then return nil end
 	local image1=image.load(im,3,'float')
 	local format=length.."x"..height
 	local img1_rsz=image.scale(image1,format)
-	return preprocessing(img1_rsz,length,height, train) 
+	return preprocessing(img1_rsz,length,height, coef_DA) 
 end
 
 
