@@ -75,9 +75,6 @@ function Get_HeadCamera_View_Files()
 
 	for i=1, #Paths do
 		list_folder=Get_Folders(Paths[i],'recorded','txt',list_folder)
-	end
-
-	for i=1, #Paths do
 		table.insert(list_txt_button, txt_path(Paths[i],"is_pressed"))
 		table.insert(list_txt_action, txt_path(Paths[i],"endpoint_action"))
 		table.insert(list_txt_state, txt_path(Paths[i],"endpoint_state"))
