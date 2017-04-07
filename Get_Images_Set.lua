@@ -63,9 +63,7 @@ end
 ---------------------------------------------------------------------------------------
 function Get_HeadCamera_View_Files()
 	local use_simulate_images=use_simulate_images or false
-	local Path
-	Path=paths.home.."/data_baxter/"
-	Path=paths.home.."/data_baxter/"
+	local Path="data_baxter"
 
 	local Paths=Get_Folders(Path,'record')
 	list_folder={}
