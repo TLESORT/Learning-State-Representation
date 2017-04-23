@@ -256,7 +256,8 @@ for nb_test=1, #Tests_Todo do
 		Model=copy_weight(Model, AE)
 	else
 		require(model_file)
-		Model=getModel(Dimension)	
+		--Model=getModel(Dimension)	-- actual model in topTripleFM_Split.lua don't need dimension as input 
+		Model=getModel()
 		--graph.dot(Model.fg, 'Big MLP')
 	end
 	Model=Model:cuda()
