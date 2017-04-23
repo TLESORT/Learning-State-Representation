@@ -2,7 +2,7 @@
 require 'nn'
 
 -- network-------------------------------------------------------
-function getModel(Dimension)
+function getModel()
 	nbFilter=32
 	input = nn.Identity()()
 	conv1 = nn.SpatialConvolution(3, nbFilter, 3, 3)(input)
